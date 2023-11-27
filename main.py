@@ -5,7 +5,6 @@ import jwt
 from fastapi import FastAPI, Depends, HTTPException, status, Request, Header
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
-from psycopg2 import connect, DatabaseError
 templates = Jinja2Templates(directory="templates")
 
 client = clickhouse_connect.get_client(host='localhost')
@@ -68,15 +67,10 @@ def create_database(user):
     dbpass = token_urlsafe(16)
     client = clickhouse_connect.get_client(host='localhost')
 
-    try:
-        client.command(f"CREATE DATABASE {dbname}")
-        client.command(f"CREATE USER {dbname} IDENTIFIED BY '{dbpass}'")
-        client.command(f"GRANT ALL ON {dbname} TO {dbname}")
-    except DatabaseError as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database creation failed: {e}",
-        )
+    client.command(f"CREATE DATABASE {dbname}")
+    client.command(f"CREATE USER {dbname} IDENTIFIED BY '{dbpass}'")
+    client.command(f"GRANT ALL ON {dbname} TO {dbname}")
+
 
     return dbname, dbname, dbpass
 
