@@ -8,16 +8,15 @@ from fastapi.templating import Jinja2Templates
 from psycopg2 import connect, DatabaseError
 templates = Jinja2Templates(directory="templates")
 
-def start():
-    client = clickhouse_connect.get_client(host='localhost')
-    client.command('CREATE DATABASE IF NOT EXISTS admin_db')
-    client.command('USE admin_db')
-    client.command('''create table if not exists users
+client = clickhouse_connect.get_client(host='localhost')
+client.command('CREATE DATABASE IF NOT EXISTS admin_db')
+client.command('USE admin_db')
+client.command('''create table if not exists users
     (
         username Nullable(VARCHAR2),
         password Nullable(VARCHAR2)
     )
-        engine = Memory''')
+    engine = Memory''')
 
 app = FastAPI()
 auth = HTTPBasic()
