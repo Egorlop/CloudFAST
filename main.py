@@ -12,8 +12,8 @@ client.command('CREATE DATABASE IF NOT EXISTS admin_db')
 client.command('USE admin_db')
 client.command('''create table if not exists users
     (
-        username Nullable(VARCHAR2),
-        password Nullable(VARCHAR2)
+        username Nullable(String),
+        password Nullable(String)
     )
     engine = Memory''')
 
