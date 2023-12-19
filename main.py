@@ -20,7 +20,7 @@ client.command('''create table if not exists users
 app = FastAPI()
 auth = HTTPBasic()
 
-def create_jwt_token(username: str):
+def jwt_token(username: str):
     payload = {
         "sub": username,
         "exp": datetime.utcnow() + timedelta(days=1)
@@ -28,18 +28,11 @@ def create_jwt_token(username: str):
     token = jwt.encode(payload, "secret", algorithm="HS256")
     return token
 
-
-def verify_jwt_token(token: str):
+def verify_jwt(token: str):
     try:
         payload = jwt.decode(token, "secret", algorithms=["HS256"])
         username = payload["sub"]
         return username
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -48,68 +41,60 @@ def verify_jwt_token(token: str):
         )
 
 
-def verify_user(credentials: HTTPBasicCredentials = Depends(auth)):
+def verify_client(credentials: HTTPBasicCredentials = Depends(auth)):
     client = clickhouse_connect.get_client(host='localhost')
     client.command('USE admin_db')
     user = client.command(f"SELECT * FROM users where username = '{credentials.username}'")
-    print(user)
     if type(user) is not list or user[1] != credentials.password:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
+            detail="Invalid client or password",
             headers={"WWW-Authenticate": "Basic"},
         )
     return user
 
-
-def create_database(user):
+def create_db(user):
     dbname = f"db_{user[0]}_{token_urlsafe(8)}"
     dbpass = token_urlsafe(16)
     client = clickhouse_connect.get_client(host='localhost')
-
     client.command(f"CREATE DATABASE {dbname}")
-    client.command(f"CREATE USER {dbname} IDENTIFIED BY '{dbpass}'")
+    client.command(f"CREATE USER {user[0]} IDENTIFIED BY '{dbpass}'")
     client.command(f"GRANT ALL ON {dbname} TO {dbname}")
-
-
     return dbname, dbname, dbpass
 
-
-@app.post("/register")
+@app.post("/registration")
 def register(credentials: HTTPBasicCredentials = Depends(auth)):
     client = clickhouse_connect.get_client(host='localhost')
     client.command('USE admin_db')
-    user = client.command(f"SELECT * FROM users where username = '{credentials.username}'")
-    print(user)
-    if type(user) is list:
+    users = client.command(f"SELECT * FROM users where username = '{credentials.username}'")
+    if type(users) is list:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already exists",
+            detail="Client exists",
         )
     client.command('USE admin_db')
-    user = client.command(f'''insert into users values('{credentials.username}','{credentials.password}')''')
-    return {"message": "User registered successfully"}
+    users = client.command(f'''insert into users values('{credentials.username}','{credentials.password}')''')
+    return {"message": "Client registered"}
 
 
-@app.post("/authorize")
-def authorize(user=Depends(verify_user)):
-    token = create_jwt_token(user[0])
-    return {"message": "User authorized successfully", "username": user[0], "token": token}
+@app.post("/authorization")
+def authorize(user=Depends(verify_client)):
+    token = jwt_token(user[0])
+    return {"message": "User authorized", "Client": user[0], "Token": token}
 
-
-@app.get("/create_database")
+@app.get("/create_db")
 def create_database_for_user(token: str = Header(None)):
-    username = verify_jwt_token(token)
+    username = verify_jwt(token)
     client = clickhouse_connect.get_client(host='localhost')
     client.command('USE admin_db')
     user = client.command(f"SELECT * FROM users where username = '{username}'")
     if type(user) is not list:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            detail="Client not found",
         )
-    dbname, dbuser, dbpass = create_database(user)
-    return {"message": "Database created successfully", "database": dbname, "user": dbuser, "password": dbpass}
+    dbname, dbuser, dbpass = create_db(user)
+    return {"message": "Database created", "db": dbname, "client": dbuser, "password": dbpass}
 
 
 @app.get("/")
