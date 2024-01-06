@@ -5,3 +5,6 @@ docker logs cont -f
 
 
 docker run -d -p 8080:8080 --name cont app
+
+    client.command(f"CREATE USER {user[0]} IDENTIFIED BY '{dbpass}'")
+    client.command(f"GRANT ALL ON {dbname} TO {dbname}")

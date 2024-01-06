@@ -109,8 +109,8 @@ resource "rustack_vm" "vm" {
   }
 
   provisioner "file" {
-    source      = "./docker/Dockerfile"
-    destination = "/home/egor/Dockerfile"
+    source      = "./doc/main.Dockerfile"
+    destination = "/home/egor/main.Dockerfile"
     connection {
       type     = "ssh"
       user     = "egor"
@@ -120,7 +120,7 @@ resource "rustack_vm" "vm" {
   }
 
   provisioner "file" {
-    source      = "./docker/docker-compose.yml"
+    source      = "./doc/docker-compose.yml"
     destination = "/home/egor/docker-compose.yml"
     connection {
       type     = "ssh"
