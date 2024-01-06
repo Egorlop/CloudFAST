@@ -61,8 +61,6 @@ def create_db(user):
     dbpass = token_urlsafe(16)
     client = clickhouse_connect.get_client(host=host)
     client.command(f"CREATE DATABASE {user[0]}")
-    client.command(f"CREATE USER {user[0]} IDENTIFIED BY '{dbpass}'")
-    client.command(f"GRANT ALL ON {dbname} TO {dbname}")
     return dbname, dbname, dbpass
 
 @app.post("/registration")
