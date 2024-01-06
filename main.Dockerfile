@@ -1,6 +1,7 @@
 FROM python:3.10-bullseye
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update
+
+RUN apt-get update -y
 COPY . /app
 WORKDIR /app
 

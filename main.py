@@ -5,9 +5,12 @@ import jwt
 from fastapi import FastAPI, Depends, HTTPException, status, Request, Header
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
+import os
+
+host = os.getenv("HOST")
 templates = Jinja2Templates(directory="templates")
 
-client = clickhouse_connect.get_client(host='localhost')
+client = clickhouse_connect.get_client(host=host)
 client.command('CREATE DATABASE IF NOT EXISTS admin_db')
 client.command('USE admin_db')
 client.command('''create table if not exists users
@@ -42,7 +45,7 @@ def verify_jwt(token: str):
 
 
 def verify_client(credentials: HTTPBasicCredentials = Depends(auth)):
-    client = clickhouse_connect.get_client(host='localhost')
+    client = clickhouse_connect.get_client(host=host)
     client.command('USE admin_db')
     user = client.command(f"SELECT * FROM users where username = '{credentials.username}'")
     if type(user) is not list or user[1] != credentials.password:
@@ -54,17 +57,17 @@ def verify_client(credentials: HTTPBasicCredentials = Depends(auth)):
     return user
 
 def create_db(user):
-    dbname = f"db_{user[0]}_{token_urlsafe(8)}"
+    dbname = f"db{user[0]}{token_urlsafe(8)}"
     dbpass = token_urlsafe(16)
-    client = clickhouse_connect.get_client(host='localhost')
-    client.command(f"CREATE DATABASE {dbname}")
+    client = clickhouse_connect.get_client(host=host)
+    client.command(f"CREATE DATABASE {user[0]}")
     client.command(f"CREATE USER {user[0]} IDENTIFIED BY '{dbpass}'")
     client.command(f"GRANT ALL ON {dbname} TO {dbname}")
     return dbname, dbname, dbpass
 
 @app.post("/registration")
 def register(credentials: HTTPBasicCredentials = Depends(auth)):
-    client = clickhouse_connect.get_client(host='localhost')
+    client = clickhouse_connect.get_client(host=host)
     client.command('USE admin_db')
     users = client.command(f"SELECT * FROM users where username = '{credentials.username}'")
     if type(users) is list:
@@ -85,7 +88,7 @@ def authorize(user=Depends(verify_client)):
 @app.get("/create_db")
 def create_database_for_user(token: str = Header(None)):
     username = verify_jwt(token)
-    client = clickhouse_connect.get_client(host='localhost')
+    client = clickhouse_connect.get_client(host=host)
     client.command('USE admin_db')
     user = client.command(f"SELECT * FROM users where username = '{username}'")
     if type(user) is not list:
