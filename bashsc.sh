@@ -9,4 +9,5 @@ sudo mv users.xml /etc/clickhouse-server/
 
 sudo service clickhouse-server start
 service clickhouse-server status
-bash -c "cd CloudFAST && pip install -r requirements.txt"
+pip install -r requirements.txt
+export HOST=localhost

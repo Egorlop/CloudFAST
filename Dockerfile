@@ -1,5 +1,6 @@
 FROM python:3.10-bullseye
 ENV DEBIAN_FRONTEND=noninteractive
+ENV HOST=localhost
 RUN apt-get update
 RUN apt-get -y install sudo
 RUN apt-get install -y apt-transport-https ca-certificates dirmngr
