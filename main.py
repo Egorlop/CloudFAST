@@ -7,7 +7,8 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.templating import Jinja2Templates
 import os
 
-host = os.getenv("HOST")
+host = 'clickhouse-service'
+#os.getenv("HOST")
 templates = Jinja2Templates(directory="templates")
 
 client = clickhouse_connect.get_client(host=host)
