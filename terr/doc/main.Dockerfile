@@ -1,5 +1,5 @@
 FROM python:3.10.13-bullseye
-ENV DB_HOST=clickhouse-service
+ENV HOST=clickhouse-service
 
 RUN apt-get install git -y
 RUN git clone https://github.com/Egorlop/CloudFAST
